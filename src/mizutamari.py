@@ -12,11 +12,11 @@ type Point = tuple[int, int]
 @dataclass(frozen=True)
 class Board:
     size: int
-    player: int
+    player_count: int
     points: Set[Point] = frozenset()
     last: Point | None = None
     catch: tuple[Point, Point, Point] | None = None
-    turn: int = 1
+    current_player: int = 1
 
 
 def check_concyclic(p: Point, p1: Point, p2: Point, p3: Point) -> bool:
@@ -43,14 +43,18 @@ def find_concyclic(p: Point, ps: Set[Point]) -> tuple[Point, Point, Point] | Non
 def move(p: Point, b: Board) -> Board:
     points = b.points | {p}
     catch = find_concyclic(p, b.points)
-    turn = ((b.turn + 1) if b.turn != b.player else 1) if catch is None else b.turn
+    current_player = (
+        ((b.current_player + 1) if b.current_player != b.player_count else 1)
+        if catch is None
+        else b.current_player
+    )
     return Board(
         size=b.size,
-        player=b.player,
+        player_count=b.player_count,
         points=points,
         last=p,
         catch=catch,
-        turn=turn,
+        current_player=current_player,
     )
 
 
@@ -78,32 +82,36 @@ def visualize(b: Board) -> str:
         string += f"{i} " + " ".join(cells) + "\n"
     string += "\n"
     string += (
-        f"Player {b.turn}'s turn.\n"
+        f"Player {b.current_player}'s turn.\n"
         if not is_end_board(b)
-        else f"Game Set: Player {b.turn} lost.\n"
+        else f"Game Set: Player {b.current_player} lost.\n"
     )
     return string
 
 
 def evaluate_board(b: Board, depth: int) -> list[float]:
     if is_end_board(b):
-        return [-1.0 if i == b.turn else 1.0 for i in range(1, b.player + 1)]
+        return [
+            -1.0 if i == b.current_player else 1.0 for i in range(1, b.player_count + 1)
+        ]
     elif depth == 0:
-        return [0.0] * b.player
+        return [0.0] * b.player_count
     else:
         scores = [evaluate_board(move(p, b), depth - 1) for p in get_moves(b)]
-        max_score = max(v[b.turn - 1] for v in scores)
-        best_scores = [v for v in scores if v[b.turn - 1] == max_score]
+        max_score = max(v[b.current_player - 1] for v in scores)
+        best_scores = [v for v in scores if v[b.current_player - 1] == max_score]
         return [
             sum(score[i] for score in best_scores) / len(best_scores)
-            for i in range(b.player)
+            for i in range(b.player_count)
         ]
 
 
 def play_auto(b: Board, depth: int) -> Point:
     score_table = {p: evaluate_board(move(p, b), depth) for p in get_moves(b)}
-    max_score = max(v[b.turn - 1] for v in score_table.values())
-    return choice([p for p, v in score_table.items() if v[b.turn - 1] == max_score])
+    max_score = max(v[b.current_player - 1] for v in score_table.values())
+    return choice(
+        [p for p, v in score_table.items() if v[b.current_player - 1] == max_score]
+    )
 
 
 class Cli(cmd.Cmd):
@@ -112,13 +120,13 @@ class Cli(cmd.Cmd):
     def __init__(
         self,
         size: int,
-        player: int,
+        player_count: int,
         stdin: IO[str] | None = None,
         stdout: IO[str] | None = None,
     ) -> None:
         super().__init__(stdin=stdin, stdout=stdout)
         self.use_rawinput = stdin is None
-        self.board = Board(size, player)
+        self.board = Board(size, player_count)
 
     def preloop(self) -> None:
         self.stdout.write(visualize(self.board))
@@ -151,9 +159,11 @@ def main():
     parser.add_argument(
         "--size", "-s", type=int, default=9, choices=range(2, 10), help="Size of board"
     )
-    parser.add_argument("--player", "-p", type=int, default=2, help="Number of player")
+    parser.add_argument(
+        "--players", "-p", type=int, default=2, help="Number of players"
+    )
     args = parser.parse_args()
-    Cli(args.size, args.player).cmdloop()
+    Cli(args.size, args.players).cmdloop()
 
 
 if __name__ == "__main__":
