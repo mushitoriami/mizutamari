@@ -89,28 +89,29 @@ def visualize(b: Board) -> str:
     return string
 
 
-def evaluate_board(b: Board, depth: int) -> list[float]:
+def evaluate_board(b: Board, depth: int) -> dict[int, float]:
     if is_end_board(b):
-        return [
-            -1.0 if i == b.current_player else 1.0 for i in range(1, b.player_count + 1)
-        ]
+        return {
+            i: -1.0 if i == b.current_player else 1.0
+            for i in range(1, b.player_count + 1)
+        }
     elif depth == 0:
-        return [0.0] * b.player_count
+        return dict.fromkeys(range(1, b.player_count + 1), 0.0)
     else:
         scores = [evaluate_board(move(p, b), depth - 1) for p in get_moves(b)]
-        max_score = max(v[b.current_player - 1] for v in scores)
-        best_scores = [v for v in scores if v[b.current_player - 1] == max_score]
-        return [
-            sum(score[i] for score in best_scores) / len(best_scores)
-            for i in range(b.player_count)
-        ]
+        max_score = max(v[b.current_player] for v in scores)
+        best_scores = [v for v in scores if v[b.current_player] == max_score]
+        return {
+            i: sum(score[i] for score in best_scores) / len(best_scores)
+            for i in range(1, b.player_count + 1)
+        }
 
 
 def play_auto(b: Board, depth: int) -> Point:
     score_table = {p: evaluate_board(move(p, b), depth) for p in get_moves(b)}
-    max_score = max(v[b.current_player - 1] for v in score_table.values())
+    max_score = max(v[b.current_player] for v in score_table.values())
     return choice(
-        [p for p, v in score_table.items() if v[b.current_player - 1] == max_score]
+        [p for p, v in score_table.items() if v[b.current_player] == max_score]
     )
 
 
