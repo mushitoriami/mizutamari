@@ -17,20 +17,20 @@ def get_safe_moves(b: Board) -> Set[Point]:
     return frozenset(p for p in get_moves(b) if not is_end_board(move(p, b)))
 
 
-def check_board_history(ps: list[Point], size: int, player: int):
-    board = Board(size=size, player=player)
+def check_board_history(ps: list[Point], size: int, player_count: int):
+    board = Board(size=size, player_count=player_count)
     assert board.last is None
-    assert board.turn == 1
+    assert board.current_player == 1
     for p in ps:
         assert p in get_safe_moves(board)
         board = move(p, board)
         assert board.last == p
         assert not is_end_board(board)
     assert len(get_safe_moves(board)) == 0
-    assert board.turn == len(ps) % player + 1
+    assert board.current_player == len(ps) % player_count + 1
     board = move(play_auto(board, 0), board)
     assert is_end_board(board)
-    assert board.turn == len(ps) % player + 1
+    assert board.current_player == len(ps) % player_count + 1
 
 
 def test_board_history_1():
@@ -66,10 +66,10 @@ def test_board_visualize_1():
         visualize(
             Board(
                 size=4,
-                player=4,
+                player_count=4,
                 points=frozenset([(4, 2), (3, 3), (4, 3), (2, 4), (1, 1), (4, 4)]),
                 last=(4, 4),
-                turn=1,
+                current_player=1,
             )
         )
         == """  1 2 3 4
@@ -88,13 +88,13 @@ def test_board_visualize_2():
         visualize(
             Board(
                 size=6,
-                player=5,
+                player_count=5,
                 points=frozenset(
                     [(6, 3), (1, 5), (5, 6), (1, 1), (2, 5), (6, 6), (2, 2), (4, 6)]
                     + [(5, 4)]
                 ),
                 last=(5, 4),
-                turn=3,
+                current_player=3,
             )
         )
         == """  1 2 3 4 5 6
@@ -115,13 +115,13 @@ def test_board_visualize_3():
         visualize(
             Board(
                 size=8,
-                player=2,
+                player_count=2,
                 points=frozenset(
                     [(7, 8), (4, 8), (5, 6), (4, 4), (7, 6), (1, 1), (8, 1), (7, 2)]
                     + [(1, 2), (6, 8), (5, 3)],
                 ),
                 last=(5, 3),
-                turn=1,
+                current_player=1,
             )
         )
         == """  1 2 3 4 5 6 7 8
@@ -144,13 +144,13 @@ def test_board_visualize_4():
         visualize(
             Board(
                 size=9,
-                player=5,
+                player_count=5,
                 points=frozenset(
                     [(7, 4), (7, 6), (9, 6), (1, 2), (8, 5), (7, 8), (5, 5), (3, 3)]
                     + [(1, 9), (3, 1), (6, 1), (5, 3)],
                 ),
                 last=(5, 3),
-                turn=2,
+                current_player=2,
             )
         )
         == """  1 2 3 4 5 6 7 8 9
@@ -174,14 +174,14 @@ def test_board_visualize_5():
         visualize(
             Board(
                 size=9,
-                player=3,
+                player_count=3,
                 points=frozenset(
                     [(7, 4), (7, 6), (9, 6), (1, 2), (8, 5), (7, 8), (5, 5), (3, 3)]
                     + [(1, 9), (3, 1), (6, 1), (5, 3), (7, 2)],
                 ),
                 last=(7, 2),
                 catch=((7, 4), (7, 6), (7, 8)),
-                turn=2,
+                current_player=2,
             )
         )
         == """  1 2 3 4 5 6 7 8 9
@@ -200,9 +200,9 @@ Game Set: Player 2 lost.
     )
 
 
-def check_cmdcli(input_text: str, size: int, player: int) -> str:
+def check_cmdcli(input_text: str, size: int, player_count: int) -> str:
     stdout = io.StringIO()
-    Cli(size, player, stdin=io.StringIO(input_text), stdout=stdout).cmdloop()
+    Cli(size, player_count, stdin=io.StringIO(input_text), stdout=stdout).cmdloop()
     return stdout.getvalue()
 
 
@@ -250,14 +250,14 @@ def check_random(b: Board, p: Point):
 
 
 def test_random_1():
-    board = Board(size=4, player=3)
+    board = Board(size=4, player_count=3)
     check_random(board, play_auto(board, 0))
 
 
 def test_random_2():
     board = Board(
         size=4,
-        player=6,
+        player_count=6,
         points=frozenset(
             [(4, 2), (3, 3), (4, 3), (2, 4), (1, 1), (4, 4)],
         ),
@@ -269,7 +269,7 @@ def test_random_2():
 def test_random_3():
     board = Board(
         size=8,
-        player=15,
+        player_count=15,
         points=frozenset(
             [(7, 8), (4, 8), (5, 6), (4, 4), (7, 6), (1, 1), (8, 1), (7, 2)]
         ),
@@ -283,15 +283,15 @@ def check_autoplay(size: int, depth_p: int, depth_o: int, r_l: int, r_h: int):
     for _ in range(500):
         b = Board(size, 2)
         while not is_end_board(b):
-            depth = depth_p if b.turn == 1 else depth_o
+            depth = depth_p if b.current_player == 1 else depth_o
             b = move(play_auto(b, depth), b)
-        w += 1 if b.turn == 2 else 0
+        w += 1 if b.current_player == 2 else 0
     for _ in range(500):
         b = Board(size, 2)
         while not is_end_board(b):
-            depth = depth_o if b.turn == 1 else depth_p
+            depth = depth_o if b.current_player == 1 else depth_p
             b = move(play_auto(b, depth), b)
-        w += 1 if b.turn == 1 else 0
+        w += 1 if b.current_player == 1 else 0
     assert r_l < w < r_h
 
 
