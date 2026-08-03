@@ -92,6 +92,14 @@ def visualize(b: Board) -> str:
     return string
 
 
+def evaluate_state(b: Board) -> dict[int, float] | None:
+    if not is_end_board(b):
+        return None
+    return {
+        i: -1.0 if i == b.current_player else 1.0 for i in range(1, b.player_count + 1)
+    }
+
+
 KYOUEN_GAME: Game[Board, Point] = Game(
     get_moves=get_moves,
     apply_move=move,
@@ -101,6 +109,7 @@ KYOUEN_GAME: Game[Board, Point] = Game(
     parse_move=lambda arg: (int(arg[0]), int(arg[1])),
     format_move=lambda p: f"{p[0]}{p[1]}",
     render=visualize,
+    evaluate=evaluate_state,
 )
 
 

@@ -15,14 +15,13 @@ class Game[S, M]:
     parse_move: Callable[[str], M]
     format_move: Callable[[M], str]
     render: Callable[[S], str]
+    evaluate: Callable[[S], dict[int, float] | None]
 
 
 def evaluate_board[S, M](game: Game[S, M], b: S, depth: int) -> dict[int, float]:
-    if game.is_end(b):
-        current = game.current_player(b)
-        return {
-            i: -1.0 if i == current else 1.0 for i in range(1, game.player_count(b) + 1)
-        }
+    score = game.evaluate(b)
+    if score is not None:
+        return score
     elif depth == 0:
         return dict.fromkeys(range(1, game.player_count(b) + 1), 0.0)
     else:
