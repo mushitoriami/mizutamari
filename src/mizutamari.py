@@ -1,10 +1,13 @@
-import cmd
 from argparse import ArgumentParser
 from collections.abc import Set
 from dataclasses import dataclass
 from itertools import combinations, product
-from random import choice
 from typing import IO
+
+from engine import Cli as EngineCli
+from engine import Game
+from engine import evaluate_board as engine_evaluate_board
+from engine import play_auto as engine_play_auto
 
 type Point = tuple[int, int]
 
@@ -89,35 +92,27 @@ def visualize(b: Board) -> str:
     return string
 
 
+KYOUEN_GAME: Game[Board, Point] = Game(
+    get_moves=get_moves,
+    apply_move=move,
+    is_end=is_end_board,
+    current_player=lambda b: b.current_player,
+    player_count=lambda b: b.player_count,
+    parse_move=lambda arg: (int(arg[0]), int(arg[1])),
+    format_move=lambda p: f"{p[0]}{p[1]}",
+    render=visualize,
+)
+
+
 def evaluate_board(b: Board, depth: int) -> dict[int, float]:
-    if is_end_board(b):
-        return {
-            i: -1.0 if i == b.current_player else 1.0
-            for i in range(1, b.player_count + 1)
-        }
-    elif depth == 0:
-        return dict.fromkeys(range(1, b.player_count + 1), 0.0)
-    else:
-        scores = [evaluate_board(move(p, b), depth - 1) for p in get_moves(b)]
-        max_score = max(v[b.current_player] for v in scores)
-        best_scores = [v for v in scores if v[b.current_player] == max_score]
-        return {
-            i: sum(score[i] for score in best_scores) / len(best_scores)
-            for i in range(1, b.player_count + 1)
-        }
+    return engine_evaluate_board(KYOUEN_GAME, b, depth)
 
 
 def play_auto(b: Board, depth: int) -> Point:
-    score_table = {p: evaluate_board(move(p, b), depth) for p in get_moves(b)}
-    max_score = max(v[b.current_player] for v in score_table.values())
-    return choice(
-        [p for p, v in score_table.items() if v[b.current_player] == max_score]
-    )
+    return engine_play_auto(KYOUEN_GAME, b, depth)
 
 
-class Cli(cmd.Cmd):
-    prompt = "> "
-
+class Cli(EngineCli[Board, Point]):
     def __init__(
         self,
         size: int,
@@ -125,34 +120,9 @@ class Cli(cmd.Cmd):
         stdin: IO[str] | None = None,
         stdout: IO[str] | None = None,
     ) -> None:
-        super().__init__(stdin=stdin, stdout=stdout)
-        self.use_rawinput = stdin is None
-        self.board = Board(size, player_count)
-
-    def preloop(self) -> None:
-        self.stdout.write(visualize(self.board))
-
-    def postcmd(self, stop: bool, line: str) -> bool:
-        self.stdout.write(visualize(self.board))
-        return stop or is_end_board(self.board)
-
-    def emptyline(self) -> bool:
-        return False
-
-    def do_EOF(self, arg: str) -> bool:  # noqa: N802
-        return True
-
-    def _move(self, p: Point) -> None:
-        if p in get_moves(self.board):
-            self.board = move(p, self.board)
-        else:
-            self.stdout.write(f"Cannot Move: {p[0]}{p[1]}\n")
-
-    def do_move(self, arg: str) -> None:
-        self._move((int(arg[0]), int(arg[1])))
-
-    def do_auto(self, arg: str) -> None:
-        self._move(play_auto(self.board, int(arg)))
+        super().__init__(
+            KYOUEN_GAME, Board(size, player_count), stdin=stdin, stdout=stdout
+        )
 
 
 def main():
