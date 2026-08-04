@@ -5,6 +5,7 @@ from mizutamari import (
     Board,
     Cli,
     Point,
+    evaluate_board,
     get_moves,
     is_end_board,
     move,
@@ -276,6 +277,55 @@ def test_random_3():
         last=(7, 2),
     )
     check_random(board, play_auto(board, 0))
+
+
+def test_evaluate_board_forced_loss_shallow_depth():
+    board = Board(size=2, player_count=2)
+    for depth in range(4):
+        assert evaluate_board(board, depth) == {1: 0.0, 2: 0.0}
+
+
+def test_evaluate_board_forced_loss_full_depth():
+    board = Board(size=2, player_count=2)
+    assert evaluate_board(board, 4) == {1: 1.0, 2: -1.0}
+    assert evaluate_board(board, 5) == {1: 1.0, 2: -1.0}
+
+
+def test_evaluate_board_avoids_self_catch():
+    board = Board(
+        size=3,
+        player_count=2,
+        points=frozenset({(1, 1), (1, 2), (2, 1)}),
+        last=(2, 1),
+        current_player=1,
+    )
+    assert evaluate_board(board, 0) == {1: 0.0, 2: 0.0}
+    assert evaluate_board(board, 1) == {1: 0.0, 2: 0.0}
+
+
+def test_play_auto_avoids_self_catch():
+    board = Board(
+        size=3,
+        player_count=2,
+        points=frozenset({(1, 1), (1, 2), (2, 1)}),
+        last=(2, 1),
+        current_player=1,
+    )
+    safe_moves = {(1, 3), (2, 3), (3, 1), (3, 2), (3, 3)}
+    for _ in range(20):
+        assert play_auto(board, 0) in safe_moves
+
+
+def test_play_auto_forced_move():
+    board = Board(
+        size=2,
+        player_count=2,
+        points=frozenset({(1, 1), (1, 2), (2, 1)}),
+        last=(2, 1),
+        current_player=2,
+    )
+    for _ in range(20):
+        assert play_auto(board, 0) == (2, 2)
 
 
 def check_autoplay(size: int, depth_p: int, depth_o: int, r_l: int, r_h: int):
