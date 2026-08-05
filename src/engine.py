@@ -17,12 +17,9 @@ class Game[S, M]:
     render: Callable[[S], str]
 
 
-type Evaluator[S] = Callable[[S], dict[int, float] | None]
-
-
 @dataclass(frozen=True)
 class Agent[S]:
-    evaluate: Evaluator[S]
+    evaluate: Callable[[S], dict[int, float] | None]
     depth: int
 
 
