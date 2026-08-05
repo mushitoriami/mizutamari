@@ -1,6 +1,6 @@
 import cmd
 from collections.abc import Callable, Set
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from random import choice
 from typing import IO
 
@@ -20,18 +20,23 @@ class Game[S, M]:
 type Evaluator[S] = Callable[[S], dict[int, float] | None]
 
 
-def evaluate_board[S, M](
-    game: Game[S, M], evaluate: Evaluator[S], b: S, depth: int
-) -> dict[int, float]:
-    score = evaluate(b)
+@dataclass(frozen=True)
+class Agent[S]:
+    evaluate: Evaluator[S]
+    depth: int
+
+
+def evaluate_board[S, M](game: Game[S, M], agent: Agent[S], b: S) -> dict[int, float]:
+    score = agent.evaluate(b)
     if score is not None:
         return score
-    elif depth == 0:
+    elif agent.depth == 0:
         return dict.fromkeys(range(1, game.player_count(b) + 1), 0.0)
     else:
         current = game.current_player(b)
+        next_agent = replace(agent, depth=agent.depth - 1)
         scores = [
-            evaluate_board(game, evaluate, game.apply_move(m, b), depth - 1)
+            evaluate_board(game, next_agent, game.apply_move(m, b))
             for m in game.get_moves(b)
         ]
         max_score = max(v[current] for v in scores)
@@ -42,10 +47,9 @@ def evaluate_board[S, M](
         }
 
 
-def play_auto[S, M](game: Game[S, M], evaluate: Evaluator[S], b: S, depth: int) -> M:
+def play_auto[S, M](game: Game[S, M], agent: Agent[S], b: S) -> M:
     score_table = {
-        m: evaluate_board(game, evaluate, game.apply_move(m, b), depth)
-        for m in game.get_moves(b)
+        m: evaluate_board(game, agent, game.apply_move(m, b)) for m in game.get_moves(b)
     }
     current = game.current_player(b)
     max_score = max(v[current] for v in score_table.values())
@@ -58,7 +62,7 @@ class Cli[S, M](cmd.Cmd):
     def __init__(
         self,
         game: Game[S, M],
-        evaluate: Evaluator[S],
+        agent: Agent[S],
         initial: S,
         stdin: IO[str] | None = None,
         stdout: IO[str] | None = None,
@@ -66,7 +70,7 @@ class Cli[S, M](cmd.Cmd):
         super().__init__(stdin=stdin, stdout=stdout)
         self.use_rawinput = stdin is None
         self.game = game
-        self.evaluate = evaluate
+        self.agent = agent
         self.board = initial
 
     def preloop(self) -> None:
@@ -92,4 +96,4 @@ class Cli[S, M](cmd.Cmd):
         self._move(self.game.parse_move(arg))
 
     def do_auto(self, arg: str) -> None:
-        self._move(play_auto(self.game, self.evaluate, self.board, int(arg)))
+        self._move(play_auto(self.game, self.agent, self.board))

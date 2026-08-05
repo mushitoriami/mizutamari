@@ -201,9 +201,11 @@ Game Set: Player 2 lost.
     )
 
 
-def check_cmdcli(input_text: str, size: int, player_count: int) -> str:
+def check_cmdcli(input_text: str, size: int, player_count: int, depth: int = 0) -> str:
     stdout = io.StringIO()
-    Cli(size, player_count, stdin=io.StringIO(input_text), stdout=stdout).cmdloop()
+    Cli(
+        size, player_count, depth, stdin=io.StringIO(input_text), stdout=stdout
+    ).cmdloop()
     return stdout.getvalue()
 
 
@@ -230,7 +232,7 @@ def test_cmdcli_3():
 
 def test_cmdcli_4():
     size = 4
-    output = check_cmdcli("auto 0\n" * (size * size), size, 6)
+    output = check_cmdcli("auto\n" * (size * size), size, 6)
     assert "Cannot Move" not in output
 
 
