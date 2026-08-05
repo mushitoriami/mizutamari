@@ -109,16 +109,15 @@ KYOUEN_GAME: Game[Board, Point] = Game(
     parse_move=lambda arg: (int(arg[0]), int(arg[1])),
     format_move=lambda p: f"{p[0]}{p[1]}",
     render=visualize,
-    evaluate=evaluate_state,
 )
 
 
 def evaluate_board(b: Board, depth: int) -> dict[int, float]:
-    return engine_evaluate_board(KYOUEN_GAME, b, depth)
+    return engine_evaluate_board(KYOUEN_GAME, evaluate_state, b, depth)
 
 
 def play_auto(b: Board, depth: int) -> Point:
-    return engine_play_auto(KYOUEN_GAME, b, depth)
+    return engine_play_auto(KYOUEN_GAME, evaluate_state, b, depth)
 
 
 class Cli(EngineCli[Board, Point]):
@@ -130,7 +129,11 @@ class Cli(EngineCli[Board, Point]):
         stdout: IO[str] | None = None,
     ) -> None:
         super().__init__(
-            KYOUEN_GAME, Board(size, player_count), stdin=stdin, stdout=stdout
+            KYOUEN_GAME,
+            evaluate_state,
+            Board(size, player_count),
+            stdin=stdin,
+            stdout=stdout,
         )
 
 
