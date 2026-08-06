@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from collections.abc import Set
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import combinations, product
 from typing import IO
 
@@ -43,19 +43,21 @@ def find_concyclic(p: Point, ps: Set[Point]) -> tuple[Point, Point, Point] | Non
     return None
 
 
-def move(p: Point, b: Board) -> Board:
-    points = b.points | {p}
-    catch = find_concyclic(p, b.points)
-    current_player = (
-        ((b.current_player + 1) if b.current_player != b.player_count else 1)
-        if catch is None
-        else b.current_player
-    )
+def _next_player(b: Board) -> int:
+    return (b.current_player + 1) if b.current_player != b.player_count else 1
+
+
+def move(m: Point | None, b: Board) -> Board:
+    if m is None:
+        return replace(b, current_player=_next_player(b))
+    points = b.points | {m}
+    catch = find_concyclic(m, b.points)
+    current_player = _next_player(b) if catch is None else b.current_player
     return Board(
         size=b.size,
         player_count=b.player_count,
         points=points,
-        last=p,
+        last=m,
         catch=catch,
         current_player=current_player,
     )
@@ -118,7 +120,7 @@ def evaluate_board(b: Board, depth: int) -> dict[int, float]:
     return engine_evaluate_board(KYOUEN_GAME, Agent(evaluate_state, depth), b)
 
 
-def play_auto(b: Board, depth: int) -> Point:
+def play_auto(b: Board, depth: int) -> Point | None:
     return engine_play_auto(KYOUEN_GAME, Agent(evaluate_state, depth), b)
 
 
