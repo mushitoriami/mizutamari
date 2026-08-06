@@ -1,5 +1,5 @@
 import cmd
-from collections.abc import Callable, Set
+from collections.abc import Callable, Iterator, Set
 from dataclasses import dataclass, replace
 from random import choice
 from typing import IO
@@ -72,18 +72,22 @@ class Cli[S, M](cmd.Cmd):
     def emptyline(self) -> bool:
         return False
 
-    def cmdloop(self) -> None:  # type: ignore[override]
-        self.stdout.write(self.game.render(self.board))
-        stop = False
-        while not stop:
+    def _read_lines(self) -> Iterator[str]:
+        while True:
             self.stdout.write(self.prompt)
             self.stdout.flush()
             line = self.stdin.readline()
             if not len(line):
-                break
-            stop = self.onecmd(line.rstrip("\r\n"))
+                return
+            yield line.rstrip("\r\n")
+
+    def cmdloop(self) -> None:  # type: ignore[override]
+        self.stdout.write(self.game.render(self.board))
+        for line in self._read_lines():
+            stop = self.onecmd(line)
             self.stdout.write(self.game.render(self.board))
-            stop = stop or self.game.is_end(self.board)
+            if stop or self.game.is_end(self.board):
+                break
 
     def _apply(self, m: M | None) -> None:
         if m in self.game.get_moves(self.board):
