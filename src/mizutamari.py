@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from itertools import combinations, product
 from typing import IO
 
+from engine import Agent, Game
 from engine import Cli as EngineCli
-from engine import Game
 from engine import evaluate_board as engine_evaluate_board
 from engine import play_auto as engine_play_auto
 
@@ -92,6 +92,14 @@ def visualize(b: Board) -> str:
     return string
 
 
+def evaluate_state(b: Board) -> dict[int, float] | None:
+    if not is_end_board(b):
+        return None
+    return {
+        i: -1.0 if i == b.current_player else 1.0 for i in range(1, b.player_count + 1)
+    }
+
+
 KYOUEN_GAME: Game[Board, Point] = Game(
     get_moves=get_moves,
     apply_move=move,
@@ -105,11 +113,11 @@ KYOUEN_GAME: Game[Board, Point] = Game(
 
 
 def evaluate_board(b: Board, depth: int) -> dict[int, float]:
-    return engine_evaluate_board(KYOUEN_GAME, b, depth)
+    return engine_evaluate_board(KYOUEN_GAME, Agent(evaluate_state, depth), b)
 
 
 def play_auto(b: Board, depth: int) -> Point:
-    return engine_play_auto(KYOUEN_GAME, b, depth)
+    return engine_play_auto(KYOUEN_GAME, Agent(evaluate_state, depth), b)
 
 
 class Cli(EngineCli[Board, Point]):
@@ -117,11 +125,16 @@ class Cli(EngineCli[Board, Point]):
         self,
         size: int,
         player_count: int,
+        depth: int,
         stdin: IO[str] | None = None,
         stdout: IO[str] | None = None,
     ) -> None:
         super().__init__(
-            KYOUEN_GAME, Board(size, player_count), stdin=stdin, stdout=stdout
+            KYOUEN_GAME,
+            Agent(evaluate_state, depth),
+            Board(size, player_count),
+            stdin=stdin,
+            stdout=stdout,
         )
 
 
@@ -133,8 +146,11 @@ def main():
     parser.add_argument(
         "--players", "-p", type=int, default=2, help="Number of players"
     )
+    parser.add_argument(
+        "--depth", "-d", type=int, default=0, help="Search depth for auto command"
+    )
     args = parser.parse_args()
-    Cli(args.size, args.players).cmdloop()
+    Cli(args.size, args.players, args.depth).cmdloop()
 
 
 if __name__ == "__main__":
