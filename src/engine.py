@@ -72,13 +72,13 @@ class Cli[S, M](cmd.Cmd):
     def emptyline(self) -> bool:
         return False
 
+    def _read_line(self) -> str:
+        self.stdout.write(self.prompt)
+        self.stdout.flush()
+        return self.stdin.readline()
+
     def _read_lines(self) -> Iterator[str]:
-        while True:
-            self.stdout.write(self.prompt)
-            self.stdout.flush()
-            line = self.stdin.readline()
-            if not len(line):
-                return
+        while line := self._read_line():
             yield line.rstrip("\r\n")
 
     def cmdloop(self) -> None:  # type: ignore[override]
