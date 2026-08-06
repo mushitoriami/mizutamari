@@ -84,9 +84,9 @@ class Cli[S, M](cmd.Cmd):
     def cmdloop(self) -> None:  # type: ignore[override]
         self.stdout.write(self.game.render(self.board))
         for line in self._read_lines():
-            stop = self.onecmd(line)
+            self.onecmd(line)
             self.stdout.write(self.game.render(self.board))
-            if stop or self.game.is_end(self.board):
+            if self.game.is_end(self.board):
                 break
 
     def _apply(self, m: M | None) -> None:
