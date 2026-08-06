@@ -2,10 +2,8 @@ from argparse import ArgumentParser
 from collections.abc import Set
 from dataclasses import dataclass, replace
 from itertools import combinations, product
-from typing import IO
 
-from engine import Agent, Game
-from engine import Cli as EngineCli
+from engine import Agent, Cli, Game
 from engine import evaluate_board as engine_evaluate_board
 from engine import play_auto as engine_play_auto
 
@@ -124,24 +122,6 @@ def play_auto(b: Board, depth: int) -> Point | None:
     return engine_play_auto(KYOUEN_GAME, Agent(evaluate_state, depth), b)
 
 
-class Cli(EngineCli[Board, Point]):
-    def __init__(
-        self,
-        size: int,
-        player_count: int,
-        depth: int,
-        stdin: IO[str] | None = None,
-        stdout: IO[str] | None = None,
-    ) -> None:
-        super().__init__(
-            KYOUEN_GAME,
-            Agent(evaluate_state, depth),
-            Board(size, player_count),
-            stdin=stdin,
-            stdout=stdout,
-        )
-
-
 def main():
     parser = ArgumentParser()
     parser.add_argument(
@@ -154,7 +134,9 @@ def main():
         "--depth", "-d", type=int, default=0, help="Search depth for auto command"
     )
     args = parser.parse_args()
-    Cli(args.size, args.players, args.depth).cmdloop()
+    Cli(
+        KYOUEN_GAME, Agent(evaluate_state, args.depth), Board(args.size, args.players)
+    ).cmdloop()
 
 
 if __name__ == "__main__":
