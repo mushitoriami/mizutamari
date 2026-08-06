@@ -252,12 +252,17 @@ def test_cmdcli_pass_always_fails():
 
 def test_cmdcli_pass_does_not_change_turn():
     output = check_cmdcli("pass\n", 9, 2)
-    assert output.count("Player 1's turn.") == 3
+    assert output.count("Player 1's turn.") == 2
 
 
 def test_cmdcli_eof():
     output = check_cmdcli("move 45\n", 9, 2)
     assert "Game Set" not in output
+
+
+def test_cmdcli_eof_does_not_rerender_board():
+    output = check_cmdcli("move 45\n", 9, 2)
+    assert output.endswith("> ")
 
 
 def check_random(b: Board, p: Point | None):

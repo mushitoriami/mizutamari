@@ -72,9 +72,6 @@ class Cli[S, M](cmd.Cmd):
     def emptyline(self) -> bool:
         return False
 
-    def do_EOF(self, arg: str) -> bool:  # noqa: N802
-        return True
-
     def cmdloop(self) -> None:  # type: ignore[override]
         self.stdout.write(self.game.render(self.board))
         stop = False
@@ -82,8 +79,9 @@ class Cli[S, M](cmd.Cmd):
             self.stdout.write(self.prompt)
             self.stdout.flush()
             line = self.stdin.readline()
-            line = "EOF" if not len(line) else line.rstrip("\r\n")
-            stop = self.onecmd(line)
+            if not len(line):
+                break
+            stop = self.onecmd(line.rstrip("\r\n"))
             self.stdout.write(self.game.render(self.board))
             stop = stop or self.game.is_end(self.board)
 
