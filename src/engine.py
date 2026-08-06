@@ -65,23 +65,27 @@ class Cli[S, M](cmd.Cmd):
         stdout: IO[str] | None = None,
     ) -> None:
         super().__init__(stdin=stdin, stdout=stdout)
-        self.use_rawinput = stdin is None
         self.game = game
         self.agent = agent
         self.board = initial
-
-    def preloop(self) -> None:
-        self.stdout.write(self.game.render(self.board))
-
-    def postcmd(self, stop: bool, line: str) -> bool:
-        self.stdout.write(self.game.render(self.board))
-        return stop or self.game.is_end(self.board)
 
     def emptyline(self) -> bool:
         return False
 
     def do_EOF(self, arg: str) -> bool:  # noqa: N802
         return True
+
+    def cmdloop(self) -> None:  # type: ignore[override]
+        self.stdout.write(self.game.render(self.board))
+        stop = False
+        while not stop:
+            self.stdout.write(self.prompt)
+            self.stdout.flush()
+            line = self.stdin.readline()
+            line = "EOF" if not len(line) else line.rstrip("\r\n")
+            stop = self.onecmd(line)
+            self.stdout.write(self.game.render(self.board))
+            stop = stop or self.game.is_end(self.board)
 
     def _apply(self, m: M | None) -> None:
         if m in self.game.get_moves(self.board):
