@@ -95,8 +95,10 @@ def visualize(b: Board) -> str:
 def evaluate_state(b: Board) -> dict[int, float] | None:
     if not is_end_board(b):
         return None
+    winner_score = 1.0 / (b.player_count - 1)
     return {
-        i: -1.0 if i == b.current_player else 1.0 for i in range(1, b.player_count + 1)
+        i: -1.0 if i == b.current_player else winner_score
+        for i in range(1, b.player_count + 1)
     }
 
 
