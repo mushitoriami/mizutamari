@@ -1,3 +1,7 @@
+[build-system]
+build-backend = "uv_build"
+requires = [ "uv-build>=0.11.21,<0.12" ]
+
 [project]
 name = "mizutamari"
 version = "0.1.2"
