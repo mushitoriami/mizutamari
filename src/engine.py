@@ -92,12 +92,10 @@ class Cli[S, M](cmd.Cmd):
             self.stdout.write(f"Cannot Move: {self.game.format_move(m)}\n")
 
     def do_move(self, arg: str) -> None:
-        m = self.game.parse_move(arg)
-        self._apply(m)
+        self._apply(self.game.parse_move(arg))
 
     def do_pass(self, arg: str) -> None:
         self._apply(None)
 
     def do_auto(self, arg: str) -> None:
-        m = play_auto(self.game, self.agent, self.board)
-        self._apply(m)
+        self._apply(play_auto(self.game, self.agent, self.board))
