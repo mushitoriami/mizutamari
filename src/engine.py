@@ -1,5 +1,5 @@
 import cmd
-from collections.abc import Callable, Set
+from collections.abc import Callable, Iterator, Set
 from dataclasses import dataclass, replace
 from random import choice
 from typing import IO
@@ -65,23 +65,29 @@ class Cli[S, M](cmd.Cmd):
         stdout: IO[str] | None = None,
     ) -> None:
         super().__init__(stdin=stdin, stdout=stdout)
-        self.use_rawinput = stdin is None
         self.game = game
         self.agent = agent
         self.board = initial
 
-    def preloop(self) -> None:
-        self.stdout.write(self.game.render(self.board))
-
-    def postcmd(self, stop: bool, line: str) -> bool:
-        self.stdout.write(self.game.render(self.board))
-        return stop or self.game.is_end(self.board)
-
     def emptyline(self) -> bool:
         return False
 
-    def do_EOF(self, arg: str) -> bool:  # noqa: N802
-        return True
+    def _read_line(self) -> str:
+        self.stdout.write(self.prompt)
+        self.stdout.flush()
+        return self.stdin.readline()
+
+    def _read_lines(self) -> Iterator[str]:
+        while line := self._read_line():
+            yield line.rstrip("\r\n")
+
+    def cmdloop(self) -> None:  # type: ignore[override]
+        self.stdout.write(self.game.render(self.board))
+        for line in self._read_lines():
+            self.onecmd(line)
+            self.stdout.write(self.game.render(self.board))
+            if self.game.is_end(self.board):
+                break
 
     def _apply(self, m: M | None) -> None:
         if m in self.game.get_moves(self.board):
