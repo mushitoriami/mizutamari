@@ -83,28 +83,21 @@ class Cli[S, M](cmd.Cmd):
     def do_EOF(self, arg: str) -> bool:  # noqa: N802
         return True
 
-    def _apply(self, m: M | None) -> bool:
+    def _apply(self, m: M | None) -> None:
         if m in self.game.get_moves(self.board):
             self.board = self.game.apply_move(m, self.board)
-            return True
-        return False
-
-    def _report_failure(self, m: M | None) -> None:
-        if m is None:
+        elif m is None:
             self.stdout.write("Cannot Pass\n")
         else:
             self.stdout.write(f"Cannot Move: {self.game.format_move(m)}\n")
 
     def do_move(self, arg: str) -> None:
         m = self.game.parse_move(arg)
-        if not self._apply(m):
-            self._report_failure(m)
+        self._apply(m)
 
     def do_pass(self, arg: str) -> None:
-        if not self._apply(None):
-            self._report_failure(None)
+        self._apply(None)
 
     def do_auto(self, arg: str) -> None:
         m = play_auto(self.game, self.agent, self.board)
-        if not self._apply(m):
-            self._report_failure(m)
+        self._apply(m)
