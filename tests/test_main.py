@@ -243,12 +243,24 @@ def test_cmdcli_5():
     assert "Game Set: Player 4 lost." in output
 
 
+def test_cmdcli_pass_always_fails():
+    output = check_cmdcli("pass\nmove 45\nmove 56\nmove 67\nmove 78\n", 9, 2)
+    assert "Cannot Pass" in output
+    assert "Cannot Move" not in output
+    assert "Game Set: Player 2 lost." in output
+
+
+def test_cmdcli_pass_does_not_change_turn():
+    output = check_cmdcli("pass\n", 9, 2)
+    assert output.count("Player 1's turn.") == 3
+
+
 def test_cmdcli_eof():
     output = check_cmdcli("move 45\n", 9, 2)
     assert "Game Set" not in output
 
 
-def check_random(b: Board, p: Point):
+def check_random(b: Board, p: Point | None):
     assert p in get_safe_moves(b) or (len(get_safe_moves(b)) == 0 and p in get_moves(b))
 
 

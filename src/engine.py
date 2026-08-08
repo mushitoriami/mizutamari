@@ -7,8 +7,8 @@ from typing import IO
 
 @dataclass(frozen=True)
 class Game[S, M]:
-    get_moves: Callable[[S], Set[M]]
-    apply_move: Callable[[M, S], S]
+    get_moves: Callable[[S], Set[M | None]]
+    apply_move: Callable[[M | None, S], S]
     is_end: Callable[[S], bool]
     current_player: Callable[[S], int]
     player_count: Callable[[S], int]
@@ -44,7 +44,7 @@ def evaluate_board[S, M](game: Game[S, M], agent: Agent[S], b: S) -> dict[int, f
         }
 
 
-def play_auto[S, M](game: Game[S, M], agent: Agent[S], b: S) -> M:
+def play_auto[S, M](game: Game[S, M], agent: Agent[S], b: S) -> M | None:
     score_table = {
         m: evaluate_board(game, agent, game.apply_move(m, b)) for m in game.get_moves(b)
     }
@@ -83,14 +83,19 @@ class Cli[S, M](cmd.Cmd):
     def do_EOF(self, arg: str) -> bool:  # noqa: N802
         return True
 
-    def _move(self, m: M) -> None:
+    def _apply(self, m: M | None) -> None:
         if m in self.game.get_moves(self.board):
             self.board = self.game.apply_move(m, self.board)
+        elif m is None:
+            self.stdout.write("Cannot Pass\n")
         else:
             self.stdout.write(f"Cannot Move: {self.game.format_move(m)}\n")
 
     def do_move(self, arg: str) -> None:
-        self._move(self.game.parse_move(arg))
+        self._apply(self.game.parse_move(arg))
+
+    def do_pass(self, arg: str) -> None:
+        self._apply(None)
 
     def do_auto(self, arg: str) -> None:
-        self._move(play_auto(self.game, self.agent, self.board))
+        self._apply(play_auto(self.game, self.agent, self.board))
