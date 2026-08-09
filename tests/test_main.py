@@ -1,11 +1,13 @@
 import io
 from collections.abc import Set
 
+from engine import Agent, Cli
 from mizutamari import (
+    KYOUEN_GAME,
     Board,
-    Cli,
     Point,
     evaluate_board,
+    evaluate_state,
     get_moves,
     is_end_board,
     move,
@@ -204,7 +206,11 @@ Game Set: Player 2 lost.
 def check_cmdcli(input_text: str, size: int, player_count: int, depth: int = 0) -> str:
     stdout = io.StringIO()
     Cli(
-        size, player_count, depth, stdin=io.StringIO(input_text), stdout=stdout
+        KYOUEN_GAME,
+        Agent(evaluate_state, depth),
+        Board(size, player_count),
+        stdin=io.StringIO(input_text),
+        stdout=stdout,
     ).cmdloop()
     return stdout.getvalue()
 
