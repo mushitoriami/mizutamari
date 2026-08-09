@@ -8,7 +8,7 @@ from typing import IO
 @dataclass(frozen=True)
 class Game[S, M]:
     get_moves: Callable[[S], Set[M | None]]
-    apply_move: Callable[[M | None, S], S]
+    apply_move: Callable[[M | None, S], Set[S]]
     is_end: Callable[[S], bool]
     current_player: Callable[[S], int]
     player_count: Callable[[S], int]
@@ -23,6 +23,17 @@ class Agent[S]:
     depth: int
 
 
+def evaluate_move[S, M](
+    game: Game[S, M], agent: Agent[S], m: M | None, b: S
+) -> dict[int, float]:
+    next_boards = game.apply_move(m, b)
+    scores = [evaluate_board(game, agent, next_b) for next_b in next_boards]
+    return {
+        i: sum(score[i] for score in scores) / len(scores)
+        for i in range(1, game.player_count(b) + 1)
+    }
+
+
 def evaluate_board[S, M](game: Game[S, M], agent: Agent[S], b: S) -> dict[int, float]:
     score = agent.evaluate(b)
     if score is not None:
@@ -32,10 +43,7 @@ def evaluate_board[S, M](game: Game[S, M], agent: Agent[S], b: S) -> dict[int, f
     else:
         current = game.current_player(b)
         next_agent = replace(agent, depth=agent.depth - 1)
-        scores = [
-            evaluate_board(game, next_agent, game.apply_move(m, b))
-            for m in game.get_moves(b)
-        ]
+        scores = [evaluate_move(game, next_agent, m, b) for m in game.get_moves(b)]
         max_score = max(v[current] for v in scores)
         best_scores = [v for v in scores if v[current] == max_score]
         return {
@@ -45,9 +53,7 @@ def evaluate_board[S, M](game: Game[S, M], agent: Agent[S], b: S) -> dict[int, f
 
 
 def play_auto[S, M](game: Game[S, M], agent: Agent[S], b: S) -> M | None:
-    score_table = {
-        m: evaluate_board(game, agent, game.apply_move(m, b)) for m in game.get_moves(b)
-    }
+    score_table = {m: evaluate_move(game, agent, m, b) for m in game.get_moves(b)}
     current = game.current_player(b)
     max_score = max(v[current] for v in score_table.values())
     return choice([m for m, v in score_table.items() if v[current] == max_score])
@@ -91,7 +97,7 @@ class Cli[S, M](cmd.Cmd):
 
     def _apply(self, m: M | None) -> None:
         if m in self.game.get_moves(self.board):
-            self.board = self.game.apply_move(m, self.board)
+            self.board = choice(tuple(self.game.apply_move(m, self.board)))
         elif m is None:
             self.stdout.write("Cannot Pass\n")
         else:

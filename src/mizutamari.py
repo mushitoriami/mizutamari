@@ -104,7 +104,7 @@ def evaluate_state(b: Board) -> dict[int, float] | None:
 
 KYOUEN_GAME: Game[Board, Point] = Game(
     get_moves=get_moves,
-    apply_move=move,
+    apply_move=lambda m, b: frozenset({move(m, b)}),
     is_end=is_end_board,
     current_player=lambda b: b.current_player,
     player_count=lambda b: b.player_count,
