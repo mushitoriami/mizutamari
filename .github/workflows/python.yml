@@ -9,6 +9,10 @@ on:
 jobs:
   tox:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [ "3.14", "format", "format_pyproject", "lint", "type" ]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -20,4 +24,4 @@ jobs:
         pip install -U pip
         pip install -U tox
     - name: Run tox
-      run: tox
+      run: tox -e ${{ matrix.env }}
