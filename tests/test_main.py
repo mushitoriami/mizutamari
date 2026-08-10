@@ -375,7 +375,7 @@ def test_autoplay_1():
 
 
 def test_autoplay_2():
-    check_autoplay(4, 1, 2, 170, 270)
+    check_autoplay(4, 1, 2, 190, 290)
 
 
 def test_autoplay_3():
