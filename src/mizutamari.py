@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from collections.abc import Set
 from dataclasses import dataclass, replace
 from itertools import combinations, product
@@ -32,6 +32,13 @@ def check_concyclic(p: Point, p1: Point, p2: Point, p3: Point) -> bool:
         + d[0][1] * d[1][0] * d[2][2]
         + d[0][2] * d[1][1] * d[2][0]
     ) == 0
+
+
+def positive_int(value: str) -> int:
+    n = int(value)
+    if n < 1:
+        raise ArgumentTypeError(f"invalid positive int value: '{value}'")
+    return n
 
 
 def find_concyclic(p: Point, ps: Set[Point]) -> tuple[Point, Point, Point] | None:
@@ -95,9 +102,10 @@ def visualize(b: Board) -> str:
 def evaluate_state(b: Board) -> dict[int, float] | None:
     if not is_end_board(b):
         return None
-    winner_score = 1.0 / (b.player_count - 1)
+    winner_score = 1.0 / b.player_count
+    loser_score = winner_score - 1.0
     return {
-        i: -1.0 if i == b.current_player else winner_score
+        i: loser_score if i == b.current_player else winner_score
         for i in range(1, b.player_count + 1)
     }
 
@@ -128,7 +136,7 @@ def main():
         "--size", "-s", type=int, default=9, choices=range(2, 10), help="Size of board"
     )
     parser.add_argument(
-        "--players", "-p", type=int, default=2, help="Number of players"
+        "--players", "-p", type=positive_int, default=2, help="Number of players"
     )
     parser.add_argument(
         "--depth", "-d", type=int, default=0, help="Search depth for auto command"

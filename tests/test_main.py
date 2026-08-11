@@ -312,8 +312,8 @@ def test_evaluate_board_forced_loss_shallow_depth():
 
 def test_evaluate_board_forced_loss_full_depth():
     board = Board(size=2, player_count=2)
-    assert evaluate_board(board, 4) == {1: 1.0, 2: -1.0}
-    assert evaluate_board(board, 5) == {1: 1.0, 2: -1.0}
+    assert evaluate_board(board, 4) == {1: 0.5, 2: -0.5}
+    assert evaluate_board(board, 5) == {1: 0.5, 2: -0.5}
 
 
 def test_evaluate_board_avoids_self_catch():
