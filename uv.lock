@@ -37,7 +37,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "shizuku", git = "https://github.com/mushitoriami/shizuku?branch=main" }]
+requires-dist = [{ name = "shizuku", git = "https://github.com/mushitoriami/shizuku?rev=main" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -171,7 +171,7 @@ wheels = [
 [[package]]
 name = "shizuku"
 version = "0.1.0"
-source = { git = "https://github.com/mushitoriami/shizuku?branch=main#79d707a8606e125782a0c99ccdcfcc293a44d47c" }
+source = { git = "https://github.com/mushitoriami/shizuku?rev=main#79d707a8606e125782a0c99ccdcfcc293a44d47c" }
 
 [[package]]
 name = "typing-extensions"
