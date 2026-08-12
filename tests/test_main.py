@@ -1,6 +1,8 @@
 import io
 from collections.abc import Set
 
+from shizuku import Agent, Cli
+
 from mizutamari import (
     KYOUEN_GAME,
     Board,
@@ -13,7 +15,6 @@ from mizutamari import (
     play_auto,
     visualize,
 )
-from mizutamari.engine import Agent, Cli
 
 
 def get_safe_moves(b: Board) -> Set[Point]:

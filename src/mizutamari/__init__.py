@@ -3,9 +3,9 @@ from collections.abc import Set
 from dataclasses import dataclass, replace
 from itertools import combinations, product
 
-from mizutamari.engine import Agent, Cli, Game
-from mizutamari.engine import evaluate_board as engine_evaluate_board
-from mizutamari.engine import play_auto as engine_play_auto
+from shizuku import Agent, Cli, Game
+from shizuku import evaluate_board as engine_evaluate_board
+from shizuku import play_auto as engine_play_auto
 
 type Point = tuple[int, int]
 
